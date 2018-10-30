@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="collectMapper">
+
+
+	<!-- 通用sql -->
+	<!-- 通用分页代码块mysql -->
+	<sql id="common_page_block">
+		<if test="pageRows != null and pageOffset !=null">
+			LIMIT ${pageOffset},${pageRows}
+		</if>
+	</sql>
+	<!-- 通用排序代码块mysql 单表用 多表的时候如果有同名字段会出现问题 -->
+	<sql id="common_order_block">
+		<if test="sort != null and sort != '' ">
+			order by ${sort}
+			<if test="sortOrder != null and sortOrder != '' ">
+				${sortOrder}
+			</if>
+		</if>
+
+	</sql>
+
+	<!-- 通用排序、分页代码块 mysql -->
+	<sql id="common_order_page_block">
+		<include refid="common_order_block"></include>
+		<include refid="common_page_block"></include>
+	</sql>
+	<!-- 根据订单查询条码 -->
+	<select id="selectAllCodeByMoNo" resultType="String">
+		select b.FullPath
+		from mo m 
+		left join BOMTree b on b.Bom_No = m.mo_bomid
+		where b.IsLeaf = 1
+		and m.mo_no = #{mo_no};
+	</select>
+	<!-- test -->
+	<select id="test" resultType="map">
+		select * from test;
+
+	</select>
+	<!-- 查询调度任务 -->
+	<select id="getDispatch" resultType="map">
+		select
+		d.dispatch_id,
+		d.dispatch_order,
+		d.dispatch_name,
+		d.dispatch_create_id,
+		d.dispatch_create_stamp,
+		d.dispatch_detail
+		from dispatch d;
+	</select>
+	<!-- 查询调度任务 -->
+	<select id="getDispatchCount" resultType="Integer">
+		select
+		count(1)
+		from
+		dispatch d;
+	</select>
+	<!-- 查询调度任务详情 任务池 -->
+	<select id="getDispatchDetail" resultType="String">
+		select
+		d.dispatch_detail
+		from dispatch d
+		where dispatch_id = #{dispatch_id}
+	</select>
+	<!-- 更新调度详情 -->
+	<update id="updateDispatchDetail">
+		update dispatch
+		set dispatch_detail =
+		#{dispatch_detail}
+		where dispatch_id = #{dispatch_id}
+	</update>
+	<!-- mes订单查询数量 -->
+	<select id="getPickerOrderNum" resultType="integer">
+		SELECT
+		count(1)
+		FROM
+		[MES].[dbo].[MO] m
+		LEFT JOIN [MES].[dbo].[Base_Mater_Category] b ON
+		b.mc_id = m.mo_mcid
+		where
+		m.mo_state='下达'
+	</select>
+	<select id="getPickerOrder" resultType="map">
+		SELECT
+		TOP ${pageRows}
+		m.id,
+		m.mo_no,
+		b.mc_name,
+		m.mo_sl,
+		CONVERT(varchar(100), m.input_time, 20)
+		input_time,
+		m.mo_state
+		FROM
+		[MES].[dbo].[MO] m
+		LEFT JOIN
+		[MES].[dbo].[Base_Mater_Category] b ON b.mc_id = m.mo_mcid
+		WHERE
+		m.mo_state='下达' AND
+		m.id NOT IN (
+		SELECT
+		TOP ${pageOffset} m.id
+		FROM
+		[MES].[dbo].[MO] m
+		LEFT JOIN [MES].[dbo].[Base_Mater_Category] b ON
+		b.mc_id = m.mo_mcid
+		WHERE
+		m.mo_state='下达'
+		)
+	</select>
+	<!-- 回写mes订单的状态和完成数量 -->
+	<update id="updateMesMo">
+		update mo
+		set
+		<trim suffixOverrides=",">
+			<if test="mo_state != null and mo_state != ''">
+				mo_state = #{mo_state},
+			</if>
+			<if test="mo_end_sl != null and mo_end_sl != ''">
+				mo_end_sl = #{mo_end_sl},
+			</if>
+		</trim>
+		where mo_no = #{mo_no}
+	</update>
+	<!-- 新增订单详情 -->
+	<insert id="insertMoDetail">
+		INSERT INTO [MES].[dbo].[exh_mo_detail] (
+		[emd_date],
+		[emd_order],
+		[emd_desc],
+		[emd_sl],
+		[emd_endsl],
+		[emd_process1],
+		[emd_process2],
+		[emd_process3],
+		[emd_process4],
+		[emd_in],
+		[emd_out],
+		[emd_state],
+		[emd_ng]
+		)
+		VALUES
+		(
+		GETDATE(),
+		#{emd_order},
+		#{emd_desc},
+		#{emd_sl},
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		'在产',
+		0
+		);
+	</insert>
+	<!-- 修改订单详情 -->
+	<update id="updateMoDetail">
+		UPDATE [MES].[dbo].[exh_mo_detail]
+		SET
+		<trim suffixOverrides=",">
+			<if test="emd_endsl != null and emd_endsl != ''">
+				[emd_endsl] = #{emd_endsl},
+			</if>
+			<if test="emd_process1 != null emd_process1 emd_endsl != ''">
+				[emd_process1] = #{emd_process1},
+			</if>
+			<if test="emd_process2 != null and emd_process2 != ''">
+				[emd_process2] = #{emd_process2},
+			</if>
+			<if test="emd_process3 != null and emd_process3 != ''">
+				[emd_process3] = #{emd_process3},
+			</if>
+			<if test="emd_process4 != null and emd_process4 != ''">
+				[emd_process4] = #{emd_process4},
+			</if>
+			<if test="emd_in != null and emd_in != ''">
+				[emd_in] =#{emd_in},
+			</if>
+			<if test="emd_out != null and emd_out != ''">
+				[emd_out] = #{emd_out},
+			</if>
+			<if test="emd_state != null and emd_state != ''">
+				[emd_state]=#{emd_state},
+			</if>
+			<if test="emd_ng != null and emd_ng != ''">
+				[emd_ng]=#{emd_ng},
+			</if>
+		</trim>
+		WHERE
+		([emd_order] IS #{emd_order});
+	</update>
+	<update id="updateMoDetailIncreace">
+		UPDATE [MES].[dbo].[exh_mo_detail]
+		SET
+		<trim suffixOverrides=",">
+			<if test="emd_endsl != null and emd_endsl != ''">
+				[emd_endsl] = [emd_endsl]+1,
+			</if>
+			<if test="emd_process1 != null and  emd_process1  != ''">
+				[emd_process1] = [emd_process1]+1,
+			</if>
+			<if test="emd_process2 != null and emd_process2 != ''">
+				[emd_process2] = [emd_process2]+1,
+			</if>
+			<if test="emd_process3 != null and emd_process3 != ''">
+				[emd_process3] = [emd_process3]+1,
+			</if>
+			<if test="emd_process4 != null and emd_process4 != ''">
+				[emd_process4] = [emd_process4]+1,
+			</if>
+			<if test="emd_in != null and emd_in != ''">
+				[emd_in] = [emd_in]+1,
+			</if>
+			<if test="emd_out != null and emd_out != ''">
+				[emd_out] = [emd_out]+1,
+			</if>
+			<if test="emd_state != null and emd_state != ''">
+				[emd_state]= [emd_state]+1,
+			</if>
+			<if test="emd_ng != null and emd_ng != ''">
+				[emd_ng]= [emd_ng]+1,
+			</if>
+		</trim>
+		WHERE
+		([emd_order] = #{emd_order});
+	</update>
+	<update id="changeMoDetail">
+		update [MES].[dbo].[exh_mo_detail]
+		SET
+		[emd_state]=#{emd_state} WHERE ([emd_order] = #{emd_order});
+	</update>
+	<!-- 查询订单详情 -->
+	<select id="selectMoDetail" resultType="map">
+		SELECT
+		[emd_id],
+		CONVERT(varchar(100), emd_date, 20) emd_date,
+		[emd_order],
+		[emd_desc],
+		[emd_sl],
+		[emd_endsl],
+		[emd_process1],
+		[emd_process2],
+		[emd_process3],
+		[emd_process4],
+		[emd_in],
+		[emd_out],
+		[emd_ng],
+		[emd_state]
+		FROM
+		[MES].[dbo].[exh_mo_detail]
+		WHERE 1=1
+		<if test="emd_state != null and emd_state != ''">
+			and emd_state = '在产';
+		</if>
+	</select>
+	<!-- 新增节拍表 -->
+	<insert id="insertBeat">
+		INSERT INTO [MES].[dbo].[exh_beat] (
+		[eb_device_id],
+		[eb_device_name],
+		[eb_device_time]
+		)
+		VALUES(
+		#{eb_device_id},
+		#{eb_device_name},
+		#{eb_device_time}
+		)
+	</insert>
+	<!-- 统计-查询节拍表 -->
+	<select id="selectBeat" resultType="map">
+		SELECT
+		[eb_device_name]
+		beat_name,
+		avg (eb_device_time) beat_num
+		FROM
+		[MES].[dbo].[exh_beat]
+		GROUP BY
+		eb_device_name
+	</select>
+	<!-- 新增质量原因表 -->
+	<insert id="insertQuality">
+		INSERT INTO [MES].[dbo].[exh_quality] ([eq_name])
+		VALUES
+		(
+		#{eq_name}
+		);
+	</insert>
+	<!-- 查询-统计质量原因 -->
+	<select id="selectQuality" resultType="map">
+		select
+		count([eq_id]) sum,
+		[eq_name]
+
+		FROM
+		[MES].[dbo].[exh_quality]
+		group by eq_name
+	</select>
+	<!-- 新增一个稼动率表 没有结束时间和持续时间 -->
+	<insert id="insertOpera">
+		INSERT INTO [MES].[dbo].[exh_operation] (
+		[eo_device_id],
+		[eo_device_name],
+		[eo_start_time],
+		[eo_order],
+		[eo_end_time] ,
+		[eo_during_stamp]
+		)
+		VALUES
+		(
+		#{eb_device_id},
+		#{eb_device_name},
+		#{eo_start_time},
+		#{eo_order},
+		#{eo_end_time},
+		#{eo_during_stamp}
+		);
+	</insert>
+	<!-- 修改稼动率表的结束时间和持续时间 -->
+	<update id="updateOpera">
+		UPDATE [MES].[dbo].[exh_operation]
+		SET
+		<trim suffixOverrides=",">
+			<if test="eo_end_time != null ana eo_end_time!= ''">
+				[eo_end_time] = #{eo_end_time},
+			</if>
+			<if test="eo_during_stamp != null ana eo_during_stamp ''">
+				[eo_during_stamp] = #{eo_during_stamp},
+			</if>
+		</trim>
+		WHERE
+		([eo_id] =#{eo_id});
+	</update>
+	<!-- 查询-统计稼动率表 -->
+	<select id="selectOpera" resultType="map">
+		select
+		[eo_device_name]
+		device_name,
+		avg([eo_during_stamp]) real_time,
+		datediff(day,m.plan_end,m.plan_start) plan_time,
+		d.emd_endsl/(d.emd_endsl+emd_ng) ok_rate
+		FROM
+		[MES].[dbo].[exh_operation] o
+		left join mo m on m.mo_no =
+		o.eo_order
+		left join exh_mo_detail d on m.mo_no = o.eo_order
+		where
+		eo_during_stamp
+		is not null
+		group by eo_device_name
+		,plan_end,plan_start,emd_endsl,emd_ng
+	</select>
+	<select id="top1out" resultType="map">
+		select top 1 *
+		FROM zncj_warehouse w
+		WHERE w.id in(1,2,5,6) and state = 1
+	</select>
+	<select id="top1in" resultType="map">
+		select top 1 *
+		FROM zncj_warehouse w
+		WHERE w.id in(13,14) and state = 0
+	</select>
+	<update id="updateWarehouse">
+		update zncj_warehouse
+		set state = #{state},
+		 	name = #{name},
+	 	 	rfid = #{rfid}
+	 	 where id = #{id}
+	</update>
+</mapper>

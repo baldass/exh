@@ -1,0 +1,93 @@
+package com.txts.task;
+
+import java.util.Date;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.txts.exh.console.service.SqlserverConnectService;
+import com.txts.util.agv.AgvUtil;
+import com.txts.util.code.CodeUtil;
+
+/**
+ * 实际执行程序
+ * 
+ * @author 40857
+ *
+ */
+@Component
+public class TaskRun {
+
+	public boolean isActivity;
+	private static Date startTime;
+	private static Date endTime;
+
+	@Autowired
+	private TaskPool tp;
+	@Autowired
+	private HardwareHelper hh;
+	@Autowired
+	private AgvUtil agv;
+	@Autowired
+	private CodeUtil cu;
+	/**
+	 * 数据库查询
+	 */
+	@Autowired
+	private SqlserverConnectService scs;
+
+
+	public void toStart(String orderName, Integer num) {
+		scs.updateMO(orderName);
+		new Thread(new Runnable() {			
+			@Override
+			public void run() {			
+				try {
+					agv.start1();
+					agv.waitend2();
+					//机械手1动作
+					hh.modbus4xWrite("机械手1抓取", 31, 1);
+					hh.modbus4xWait("机械手1抓取", 11, 111);
+					//二维码扫描
+	
+					String result = cu.waitread();
+					if("201810011016999910001".equals(result)) {//通过
+						hh.modbus4xWrite("机械手1通过", 31, 3);
+					}else {//不通过
+						hh.modbus4xWrite("机械手1未通过", 31, 2);
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}				
+			}
+		}).start();
+	}
+	
+
+	public boolean isActivity() {
+		return isActivity;
+	}
+
+	public void setActivity(boolean isActivity) {
+		this.isActivity = isActivity;
+	}
+
+	public static Date getStartTime() {
+		return startTime;
+	}
+
+	public static void setStartTime(Date startTime) {
+		TaskRun.startTime = startTime;
+	}
+
+	public static Date getEndTime() {
+		return endTime;
+	}
+
+	public static void setEndTime(Date endTime) {
+		TaskRun.endTime = endTime;
+	}
+
+}

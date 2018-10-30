@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>立体库管理</title>
+
+<meta name="keywords" content="keyword1,keyword2,keyword3">
+<meta name="description" content="this is my page">
+<meta name="content-type" content="text/html; charset=UTF-8">
+<link href="/media/css/bootstrap.min.css" rel="stylesheet"
+	type="text/css" />
+<style type="text/css">
+body {
+	font-family: "Microsoft YaHei";
+	color: white;
+}
+
+.table-head {
+	color: black;
+	text-align: center; /*让div内部文字居中*/
+	background-color: #fff;
+	border-radius: 20px;
+	width: 300px;
+	line-height: 30px; /*让黄色div中的文字内容垂直居中*/
+	margin: auto;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	-moz-border-radius: 20px;
+	-webkit-border-radius: 20px;
+}
+
+.table-body {
+	margin-left: 30px;
+	padding-top: 20px;
+	width: 100%;
+	background-image: url('/img/ui/exh_bg.jpg');
+	background-repeat: no-repeat;
+	background-position: left;
+	background-origin: border-box;
+}
+
+.altrowstable {
+	position: relative;
+	width: 80%;
+	font-family: verdana, arial, sans-serif;
+	font-size: 11px;
+	color: #333333;
+	text-align: center;
+	border-width: 1px;
+	border-color: #999999;
+	border-collapse: collapse;
+	border-width: 1px;
+	font-family: verdana, arial, sans-serif;
+	margin: 5%;
+}
+
+.altrowstable th {
+	background-color: #c3dde0;
+	border-width: 1px;
+	padding: 8px;
+	border-style: solid;
+	border-color: #a9c6c9;
+}
+
+.altrowstable td {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #a9c6c9;
+	word-break: break-all;
+}
+
+.table_abs {
+	width: 100px;
+}
+</style>
+</head>
+
+<body style="background-color: #0E2A43; height: 100%; width: 100%;">
+	<div class="table-head">
+		<h3 class="page-title">
+			<!-- 大标题 -->
+			立体库管理
+			<!-- 小标题 -->
+			<small>看板</small>
+		</h3>
+	</div>
+
+	<div class="table-body"
+		style="width: 100%; height: 100%; background: url(/img/ui/exh_bg2.jpg) no-repeat;">
+
+		<table class="altrowstable" id="alternatecolor">
+			<thead>
+				<tr>
+					<th colspan="4">产品库B</th>
+					<th colspan="4">原料库A</th>
+				</tr>
+			</thead>
+			<tbody id="warehouse_detaile">
+				<tr>
+					<td id="cell_21"></td>
+					<td id="cell_22"></td>
+					<td id="cell_23"></td>
+					<td id="cell_24"></td>
+					<td id="cell_9"></td>
+					<td id="cell_10"></td>
+					<td id="cell_11"></td>
+					<td id="cell_12"></td>
+				</tr>
+				<tr>
+					<td id="cell_17"></td>
+					<td id="cell_18"></td>
+					<td id="cell_19"></td>
+					<td id="cell_20"></td>
+					<td id="cell_5"></td>
+					<td id="cell_6"></td>
+					<td id="cell_7"></td>
+					<td id="cell_8"></td>
+				</tr>
+				<tr>
+					<td id="cell_13"></td>
+					<td id="cell_14"></td>
+					<td id="cell_15"></td>
+					<td id="cell_16"></td>
+					<td id="cell_1"></td>
+					<td id="cell_2"></td>
+					<td id="cell_3"></td>
+					<td id="cell_4"></td>
+				</tr>
+			</tbody>
+		</table>
+
+	</div>
+
+
+	<!-- jquery -->
+	<script src="/media/js/jquery-1.10.1.min.js" type="text/javascript"></script>
+	<script type="text/javascript">
+		/* function startTask(id) {
+			$.ajax({
+				url : '/start_process',
+				data : 'id=' + id,
+				type : "get",
+				dataType : "json",
+				//async : true,
+				success : function(data) {
+					if (data) {
+						alert("加工开始!");
+					}else{
+						alert("已经有产品再加工!");
+					}
+				},
+				error : function() {
+					alert("网络错误!");
+				}
+			})
+		} 
+		function initTable(data) {
+			$("#warehouse_detaile").html();
+			var cache = new Array();
+			for (var i = 0; i < data.length; i++) { //提取数据
+				cache[i] = '<td id="' + data[i].id + '"';
+				if (data[i].state) {
+					cache[i] += ' bgcolor="#33ff00"><div class="table_abs"><h4>' + data[i].name + '</h4>' + data[i].rfid + '</div></td>';
+				} else {
+					cache[i] += ' bgcolor="#ff0000" ><div class="table_abs"><h4>&nbsp;&nbsp;空&nbsp;闲&nbsp;<h4>&nbsp;</div></td>';
+				}
+		
+			}
+			var str = new Array;
+			for (var i = 0; i < 2; i++) {
+				str [i]= '<tr>'; 
+				for (var j = 0; j < cache.length; j++) {
+					var cur = parseInt(j / 4);
+					if (cur == i || cur == (i + 3)) {
+						str[i] += cache[j];
+					}
+				}
+				str [i]+= '</tr>';
+			}
+			$("#warehouse_detaile").html(str[2]+str[1]+str[0]);
+			str = "";
+		}*/
+		function initTable(data) {
+			for (var i = 0; i < data.length; i++) {
+				var item = '';
+				if (data[i].state) {
+					item += '<h4>' + data[i].name + '</h4>' + data[i].rfid + '';
+					$("#cell_" + (i + 1)).css("background-color", "green");
+				} else {
+					item += '<h4>&nbsp;&nbsp;空&nbsp;闲&nbsp;<h4>&nbsp;';
+					$("#cell_" + (i + 1)).css("background-color", "red");
+				}
+				$("#cell_" + (i + 1)).html(item);
+			}
+		}
+		function getWareHouseDetails() {
+			$.ajax({
+				url : '/warehouse/details',
+				data : {},
+				type : "get",
+				dataType : "json",
+				//async : true,
+				success : function(data) {
+					//写入table 前3列是左立体库 后3列是右立体库
+					initTable(data);
+					//console.log(data);
+					//console.log("获取数据!");
+				},
+				error : function() {
+					alert("网络错误!");
+				}
+			})
+		}
+		window.onload = function() {
+			//定时器 1s一刷新?
+			window.setTimeout(getWareHouseDetails, 1000);
+		}
+	</script>
+</body>
+</html>

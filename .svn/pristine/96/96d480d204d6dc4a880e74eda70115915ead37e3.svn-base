@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="consoleMapper">
+
+
+	<!-- 通用sql -->
+	<!-- 通用分页代码块mysql -->
+	<sql id="common_page_block">
+		<if test="pageRows != null and pageOffset !=null" >
+				LIMIT ${pageOffset},${pageRows}
+		</if>
+	</sql>
+	<!-- 通用排序代码块mysql 单表用 多表的时候如果有同名字段会出现问题 -->
+	<sql id="common_order_block">
+		<if test="sort != null and sort != '' ">
+			order by ${sort}
+			<if test="sortOrder != null and sortOrder != '' ">
+				${sortOrder}
+			</if>
+		</if>
+
+	</sql>
+	<!-- 通用排序、分页代码块 mysql -->
+	<sql id="common_order_page_block">
+		<include refid="common_order_block"></include>
+		<include refid="common_page_block"></include>
+	</sql>
+	
+	<!-- test -->
+	<select id="test" resultType="map">
+		select * from test;
+		
+	</select>
+	<!-- 查询调度任务 -->
+	<select id="getDispatch" resultType="map">
+		select  
+			d.dispatch_id,
+			d.dispatch_order,
+			d.dispatch_name,
+			d.dispatch_create_id,
+			d.dispatch_create_stamp,
+			d.dispatch_detail
+		from dispatch d;
+	</select>
+	<!-- 查询调度任务 -->
+	<select id="getDispatchCount" resultType="Integer">
+		select  
+			count(1)
+		from dispatch d;
+	</select>
+	<!-- 查询调度任务详情  任务池 -->
+	<select id="getDispatchDetail" resultType="String">
+		select  
+			d.dispatch_detail
+		from dispatch d
+		where dispatch_id = #{dispatch_id}
+	</select>
+	<!-- 更新调度详情 -->
+	<update id="updateDispatchDetail">
+		update dispatch
+		set dispatch_detail = #{dispatch_detail}
+		where dispatch_id = #{dispatch_id}
+	</update>
+	
+</mapper>

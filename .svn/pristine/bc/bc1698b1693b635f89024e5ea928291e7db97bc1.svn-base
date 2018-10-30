@@ -1,0 +1,138 @@
+package com.txts.util.code;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.TooManyListenersException;
+
+import org.springframework.stereotype.Component;
+
+import gnu.io.CommPortIdentifier;
+import gnu.io.PortInUseException;
+import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
+import gnu.io.UnsupportedCommOperationException;
+
+/**
+ * @description
+ * 
+ * @author lfy
+ * @time 2018年10月11日-下午5:42:24
+ */
+@Component
+public class CodeUtil implements SerialPortEventListener {
+	// 检测系统中可用的通讯端口类
+	private CommPortIdentifier portId;
+	// 枚举类型
+	private Enumeration<CommPortIdentifier> portList;
+
+	// RS232串口
+	private SerialPort serialPort;
+
+	// 输入输出流
+	private InputStream inputStream;
+	private OutputStream outputStream;
+
+	// 保存串口返回信息
+	private String test = "";
+
+	// 单例创建
+	private static CodeUtil uniqueInstance = new CodeUtil();
+
+	// 初始化串口
+	@SuppressWarnings("unchecked")
+	public void init(String comName) {
+		// 获取系统中所有的通讯端口
+		portList = CommPortIdentifier.getPortIdentifiers();
+		// 循环通讯端口
+		while (portList.hasMoreElements()) {
+			portId = portList.nextElement();
+			// 判断是否是串口
+			if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL) {
+				// 比较串口名称是否是"COM1"
+				if (comName.equals(portId.getName())) {
+					System.out.println("找到串口"+comName);
+					// 打开串口
+					try {
+						// open:（应用程序名【随意命名】，阻塞时等待的毫秒数）
+						serialPort = (SerialPort) portId.open(Object.class.getSimpleName(), 2000);
+						System.out.println("获取到串口对象,"+comName);
+						// 设置串口监听
+						serialPort.addEventListener(this);
+						// 设置串口数据时间有效(可监听)
+						serialPort.notifyOnDataAvailable(true);
+						// 设置串口通讯参数
+						// 波特率，数据位，停止位和校验方式
+						// 波特率2400,偶校验
+						serialPort.setSerialPortParams(9600, SerialPort.DATABITS_8, //
+								SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+						test = "";
+						outputStream = serialPort.getOutputStream();
+					} catch (PortInUseException e) {
+						e.printStackTrace();
+					} catch (TooManyListenersException e) {
+						e.printStackTrace();
+					} catch (UnsupportedCommOperationException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+				}
+			}
+		}
+	}
+
+	
+
+	public String waitread() throws Exception {
+		byte[] readBuffer = new byte[1024];
+		try {
+			inputStream = serialPort.getInputStream();
+			// 从线路上读取数据流
+			int len = 0;
+			boolean flag = true;
+			while (flag) {
+				//System.out.println("等待中..");
+				Thread.sleep(500);//每次读取间隔500ms
+				int available = inputStream.available();
+				if(available <= 0){
+					continue;
+				}
+				Thread.sleep(500);
+				int readlen = len = inputStream.read(readBuffer);
+				System.out.println("条码扫描-收到数据");
+				Thread.sleep(100);
+				String read = new String(readBuffer, 0, len).trim();
+				System.out.println("数据值为:"+read);
+				if(read.length()>21){//传输的值过多的时候 返回21位
+					return read.substring(read.length()-21);
+				}
+				return read;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	
+
+	@Override
+	public void serialEvent(SerialPortEvent arg0) {
+		
+		
+	}
+	public static void main(String[] args) throws Exception {
+		CodeUtil c = new CodeUtil();
+		c.init("COM5");
+		//avg.start1();
+		//avg.start2();
+		while (true) {
+			String v = c.waitread();
+			System.out.println("--->"+v);
+		}
+	}
+}

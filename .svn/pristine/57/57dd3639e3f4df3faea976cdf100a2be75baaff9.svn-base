@@ -1,0 +1,637 @@
+package com.txts.task;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.txts.exh.console.service.SqlserverConnectService;
+import com.txts.util.agv.AgvUtil;
+
+/**
+ * 任务池流程
+ * 
+ * @author 40857
+ *
+ */
+@SuppressWarnings("all")
+@Component
+public class TaskPool {
+
+	/**
+	 * 料盘储位 2个位置 初始均为false 当对应的料盘储位有料盘时则为true
+	 */
+	private boolean[] chargingTray = new boolean[2];
+	private String orderNum;// 订单号
+	private int num;
+	private Date startTime;
+	private Date endTime;
+
+	private AgvUtil agv;// agv控制类
+
+	@Autowired
+	private CollectUtil cu;
+	/**
+	 * 数据库查询
+	 */
+	@Autowired
+	private SqlserverConnectService scs;
+
+	/**
+	 * 初始化整个类
+	 * 
+	 * @return
+	 */
+	public boolean init(String orderName, Integer num) {
+		try {
+			chargingTray[0] = true;
+			chargingTray[1] = true;
+			this.num = num;
+			this.orderNum=orderNum;
+			//
+			scs.updateMO(orderName);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * 初始化工厂设备 在点击工单开工的时候,让所有设备恢复初始位置
+	 * 
+	 * @next getMaterial(int location) 控制立体库抓取物料 抓取物料
+	 * @return
+	 */
+	public boolean initDevices() {
+		try {
+			// TODO 向所有能控制得机械发送初始信号
+			// modbus4xWrite(machineName,address, value)
+			//agv前往初始位置
+			agv = new AgvUtil();
+		//	agv.init();
+			agv.start2();
+			agv.waitend2();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	/**
+	 * 立体库取出对应的物料和料盘
+	 * 
+	 * @next move2agv() 机械手抓取物料放至agv小车
+	 * @next move2charingTray() 机械手抓取料盘放至料盘储位 用于最后收入物料使用
+	 * @param location
+	 * @return
+	 */
+	public void getMaterial() {
+		try {
+			// 查出一个有物料的储位
+			Map<String, String> materNum = scs.getMaterNum(orderNum);
+			
+			int location = 0;
+			// TODO 立体库取出对应的物料和料盘
+			HardwareHelper.modbus4xWrite("立体库的机械手", 31, 1);
+			// TODO 等待立体库取出对应的物料和料盘完成
+			if (HardwareHelper.modbus4xWait("立体库的机械手", 1111, 0)) {
+				Map<String, Object> map = new HashMap<String, Object>();
+				cu.insertOpera(map);
+				move2agv();
+				move2charingTray();
+			} else {// 出现异常
+				breakPool(1);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 控制机械手获取物料并放至agv小车上
+	 * 
+	 * @next transport2validate()控制agv小车移动至上料机械手进行上料验证
+	 * @next move2charingTray() 控制机械手将料盘放至料盘储位上
+	 * @return
+	 */
+	public void move2agv() {
+		try {
+			// TODO 控制机械手抓取物料放至agv小车上
+			HardwareHelper.modbus4xWrite("机械手1", 111, 3);
+			// TODO 等待机械手动作完成完成
+			if (HardwareHelper.modbus4xWait("立体库的机械手", 1111, 0)) {
+				// 写入数据库exh_mo_detail出库动作
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("emd_order", orderNum);
+				map.put("emd_out", 1);
+				cu.updateMoDetailIncreace(map);
+
+				transport2validate();
+			} else {
+				breakPool(2);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 控制机械手将料盘放至料盘储位上
+	 * 
+	 * @return
+	 */
+	public void move2charingTray() {
+		try {
+			// 查找空料台
+			for (int i = 0; i < chargingTray.length; i++) {
+				if (chargingTray[i]) {
+					// TODO 控制机械手将料盘放至料盘储位上
+					HardwareHelper.modbus4xWrite("机械手1", 111, 3);
+					chargingTray[i] = false;
+					break;
+				}
+			}
+			if (// TODO 等待机械手动作完成完成
+			HardwareHelper.modbus4xWait("立体库的机械手", 1111, 0)) {
+
+			} else {
+				breakPool(3);
+			}
+			// 结束运行
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * agv小车运输物料至产线开始位置,准备上料验证
+	 * 
+	 * @next move2validate() 机械手抓取物料至固定位置扫描二维码进行上料验证
+	 * @next transportBack()
+	 * @return
+	 */
+	public void transport2validate() {
+		try {
+			// TODO agv小车运输物料至产线开始位置,准备上料验证
+			
+			agv.start1();
+			// TODO 等待机械手动作完成完成
+			if (HardwareHelper.modbus4xWait("立体库的机械手", 1111, 0)) {
+				// 上料验证
+				move2validate();
+				// agv回到初始位置
+				transportBack();
+			} else {
+				breakPool(3);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * agv小车回到立体库区准备下次动作
+	 * 
+	 * @return
+	 */
+	public void transportBack() {
+		try {
+			// TODO agv小车运输物料回到初始位置位置,准备下次动作
+			agv.start2();
+			// TODO 等待机械手动作完成完成
+			if (HardwareHelper.modbus4xWait("agv小车", 1111, 0)) {
+				// 结束
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 机械手抓取物料至固定位置扫描二维码进行上料验证
+	 * 
+	 * @next qrCodeValidate() 扫描二维码
+	 * @return
+	 */
+	public void move2validate() {
+		try {
+			// TODO 机械手抓取物料至固定位置扫描二维码进行上料验证
+			HardwareHelper.modbus4xWrite("机械手2", 111, 3);
+			// TODO 等待机械手动作完成完成
+			if (HardwareHelper.modbus4xWait("机械手2", 1111, 0)) {
+				// 扫描二维码
+				qrCodeValidate();
+			} else {
+				breakPool(4);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 二维码扫描验证物料
+	 * 
+	 * @next move2desk()
+	 * @return
+	 */
+	public void qrCodeValidate() {
+		try {
+			// TODO 二维码扫描验证物料
+			HardwareHelper.modbus4xWrite("二维码扫描", 111, 3);
+			// TODO 等待机械手动作完成完成
+			if (HardwareHelper.modbus4xWait("二维码扫描", 1111, 0)) {// 写入数据库exh_mo_detail上料动作
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("emd_order", orderNum);
+				map.put("emd_process1", 1);
+				cu.updateMoDetailIncreace(map);
+				// 挪至加工台
+				move2desk();
+			} else {
+				breakPool(5);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 机械手抓取物料至加工台准备加工
+	 * 
+	 * @next machining() 加工
+	 * @return
+	 */
+	public void move2desk() {
+		try {
+			// TODO 机械手抓取物料至加工台准备加工
+			HardwareHelper.modbus4xWrite("机械手3", 111, 3);
+			// TODO 等待机械手动作完成完成
+			if (HardwareHelper.modbus4xWait("机械手3", 1111, 0)) {
+				// 加工
+				machining();
+
+			} else {
+				breakPool(6);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 加工台加工物料
+	 * 
+	 * @next move2conveyerBelt()
+	 * @return
+	 */
+	public void machining() {
+		try {
+			// TODO 加工台加工物料
+			HardwareHelper.modbus4xWrite("加工台", 111, 3);
+			// TODO 等待动作完成
+			if (HardwareHelper.modbus4xWait("加工台", 1111, 0)) {
+				// 机械手抓取产品
+				move2compass();
+			} else {
+				breakPool(7);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 机械手抓取产品至罗盘安装螺丝钉
+	 * 
+	 * @next toScrew();
+	 * @return
+	 */
+	public void move2compass() {
+		try {
+			// TODO 机械手抓取物料至加工台准备加工
+			HardwareHelper.modbus4xWrite("机械手4", 111, 3);
+			// TODO 等待动作完成
+			if (HardwareHelper.modbus4xWait("机械手4", 1111, 0)) {
+				// 拧螺丝
+				toScrew();
+			} else {
+				breakPool(8);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 拧螺丝
+	 * 
+	 * @next move2conveyerBelt() 机械手抓取产品至传送带
+	 * @return
+	 */
+	public void toScrew() {
+		try {
+			// TODO 机械手抓取物料至加工台准备加工
+			HardwareHelper.modbus4xWrite("视觉转盘及上螺钉", 111, 3);
+			// TODO 等待动作完成
+			if (HardwareHelper.modbus4xWait("视觉转盘及上螺钉", 1111, 0)) {// 写入数据库exh_mo_detail加工动作
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("emd_order", orderNum);
+				map.put("emd_process2", 1);
+				cu.updateMoDetailIncreace(map);
+
+				// 机械手抓取产品至传送带
+				move2conveyerBelt();
+			} else {
+				breakPool(9);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 机械手抓取产品至传送带
+	 * 
+	 * @next transport() 传送带运输
+	 * @return
+	 */
+	public void move2conveyerBelt() {
+		try {
+			// TODO 机械手抓取产品至传送带
+			HardwareHelper.modbus4xWrite("机械手4", 111, 3);
+			// TODO 等待动作完成
+			if (HardwareHelper.modbus4xWait("机械手4", 1111, 0)) {
+				// 传送带运输
+				transport();
+			} else {
+				breakPool(10);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 传送带运输
+	 * 
+	 * @next stopTransport()
+	 * @return
+	 */
+	public void transport() {
+		try {
+			// TODO 传送带运输
+			HardwareHelper.modbus4xWrite("传送带", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 传送带停止
+			stopTransport();			
+		} catch (Exception e) {
+			e.printStackTrace();			
+		}
+	}
+
+	/**
+	 * 传送带停止运输
+	 * 
+	 * @next 视觉检测
+	 * @return
+	 */
+	public void stopTransport() {
+		try {
+			// TODO 传送带停止运输
+			HardwareHelper.modbus4xWrite("传送带", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 视觉检测
+			visionInspection();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 视觉检测
+	 * 
+	 * @next transport()
+	 * @return
+	 */
+	public void visionInspection() {
+		try {
+			// TODO 视觉检测
+			HardwareHelper.modbus4xWrite("视觉检测", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("视觉检测", 1111, 0);
+			// 传送带继续送往包装区
+			transport2();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+		}
+	}
+
+	/**
+	 * 传送带运输产品至包装区
+	 * 
+	 * @next stopTransport()
+	 * @return
+	 */
+	public void transport2() {
+		try {
+			// TODO 传送带运输
+			HardwareHelper.modbus4xWrite("传送带", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 传送带停止
+			stopTransport2();			
+		} catch (Exception e) {
+			e.printStackTrace();			
+		}
+	}
+
+	/**
+	 * 传送带停止运输,等待包装
+	 * 
+	 * @next move2package() 机械手抓取产品包装
+	 * @return
+	 */
+	public void stopTransport2() {
+		try {
+			// TODO 传送带停止运输
+			HardwareHelper.modbus4xWrite("传送带", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 机械手抓取产品包装
+			move2package();			
+		} catch (Exception e) {
+			e.printStackTrace();			
+		}
+	}
+
+	/**
+	 * 机械手抓取产品包装
+	 * 
+	 * @next move2warehouse() 机械手抓取包装好的产品至传送带准备入库
+	 * @return
+	 */
+	public void move2package() {
+		try {
+			for (int i = 0; i < chargingTray.length; i++) {
+				if (!chargingTray[i]) {
+					// TODO 抓取产品至料盘
+					HardwareHelper.modbus4xWrite("机械手5", 111, 3);
+					break;
+				}
+			}
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("机械手5", 1111, 0);
+			// 抓取只传送带
+			move2warehouse();			
+		} catch (Exception e) {
+			e.printStackTrace();			
+		}
+	}
+
+	/**
+	 * 机械手抓取包装好的产品至传送带准备入库
+	 * 
+	 * @next transport3()
+	 * @return
+	 */
+	public void move2warehouse() {
+		try {
+			for (int i = 0; i < chargingTray.length; i++) {
+				if (!chargingTray[i]) {
+					// TODO 机械手抓取包装好的产品
+					HardwareHelper.modbus4xWrite("机械手1", 111, 3);
+					chargingTray[i] = true;
+					break;
+				}
+			}
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("机械手1", 1111, 0);
+			// 写入数据库exh_mo_detail包装动作
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("emd_order", orderNum);
+			map.put("emd_process3", 1);
+			cu.updateMoDetailIncreace(map);
+
+			// 传送带运输
+			transport3();			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 传送带运输产品至立体库
+	 * 
+	 * @next stopTransport()
+	 * @return
+	 */
+	public void transport3() {
+		try {
+			// TODO 传送带运输
+			HardwareHelper.modbus4xWrite("传送带", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 传送带停止
+			stopTransport3();		
+		} catch (Exception e) {
+			e.printStackTrace();			
+		}
+	}
+
+	/**
+	 * 传送带停止运输,等待入库
+	 * 
+	 * @next warehousing() 入库操作
+	 * @return
+	 */
+	public void stopTransport3() {
+		try {
+			// TODO 传送带停止运输
+			HardwareHelper.modbus4xWrite("传送带", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 机械手抓取产品包装
+			warehousing();			
+		} catch (Exception e) {
+			e.printStackTrace();			
+		}
+	}
+
+	/**
+	 * 入库
+	 * 
+	 * @next 结束
+	 * @return
+	 */
+	public void warehousing() {
+		try {
+			// TODO 入库
+			HardwareHelper.modbus4xWrite("视觉检测", 111, 3);
+			// TODO 等待动作完成
+			HardwareHelper.modbus4xWait("传送带", 1111, 0);
+			// 写入数据库exh_mo_detail 进行入库
+			Map<String, Object> map = new HashMap<>();
+			map.put("emd_order", orderNum);
+			map.put("emd_endsl", 1);
+			map.put("emd_in", 1);
+			cu.updateMoDetailIncreace(map);
+			if (num <= 0) {
+				return;
+			} else {
+				num--;
+				getMaterial();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 中断本工序
+	 * 
+	 * @param turns
+	 */
+	public void breakPool(int turns) {
+
+	}
+
+	public void endOrder() {
+		Map<String, Object> map = new HashMap<>();
+		map.put("emd_state", "完工");
+		map.put("emd_order", orderNum);
+		cu.updateMoDetailIncreaceState(map);
+	}
+
+	public String getOrderNum() {
+		return orderNum;
+	}
+
+	public void setOrderNum(String orderNum) {
+		this.orderNum = orderNum;
+	}
+
+	public int getNum() {
+		return num;
+	}
+
+	public void setNum(int num) {
+		this.num = num;
+	}
+
+	public Date getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(Date endTime) {
+		this.endTime = endTime;
+	}
+
+}

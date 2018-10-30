@@ -1,0 +1,66 @@
+package com.txts.task;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.txts.exh.console.service.SqlserverConnectService;
+import com.txts.util.agv.AgvUtil;
+import com.txts.util.code.CodeUtil;
+
+@Component
+public class TaskPoolNew {
+	/**
+	 * 料盘储位 2个位置 初始均为false 当对应的料盘储位有料盘时则为true
+	 */
+	private boolean[] chargingTray = new boolean[2];
+	private String orderNum;// 订单号
+	private int num;
+	private Date startTime;
+	private Date endTime;
+	@Autowired
+	private AgvUtil agv;// agv控制类
+	@Autowired
+	private HardwareHelper h;//modbus
+
+	@Autowired
+	private CodeUtil cu;// 二维码扫描
+	/**
+	 * 数据库查询
+	 */
+	@Autowired
+	private SqlserverConnectService scs;
+
+	public void startProcess() {
+		try {
+			// 初始化整个流程
+			//TODO 确定领取的物料
+			
+			agv.start1();
+			agv.waitend2();
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						// 等待50秒
+						Thread.sleep(50000);
+						agv.start2();
+						agv.waitend2();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}).start();
+			h.modbus4xWrite("机械手1-指令1", 31, 1);// 启动机械手1 抓料
+			String readCode = cu.waitread();// 等待条码扫描
+			//TODO 自己查找
+			h.modbus4xWait("机械手1-指令1", 11, 1);//等待机械手1完成
+			h.modbus4xWrite("机械手1-指令1", 11, 0);//启动机械手1关闭信号重置
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}
