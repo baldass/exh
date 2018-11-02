@@ -30,11 +30,10 @@
 	<!-- 根据订单查询条码 -->
 	<select id="selectAllCodeByMoNo" resultType="String">
 		select b.FullPath
-		from mo m
+		from mo m 
 		left join BOMTree b on b.Bom_No = m.mo_bomid
 		where b.IsLeaf = 1
-		and m.mo_no
-		= #{mo_no};
+		and m.mo_no = #{mo_no};
 	</select>
 	<!-- test -->
 	<select id="test" resultType="map">
@@ -357,28 +356,19 @@
 	</select>
 	<select id="top1out" resultType="map">
 		select top 1 *
-		FROM
-		zncj_warehouse w
-		WHERE w.id in(1,2,3,5,6,7) and state = 1
+		FROM zncj_warehouse w
+		WHERE w.id in(1,2,5,6) and state = 1
 	</select>
 	<select id="top1in" resultType="map">
 		select top 1 *
-		FROM zncj_warehouse
-		w
-		WHERE w.id in(13,14,15,17,18,19) and state = 0
+		FROM zncj_warehouse w
+		WHERE w.id in(13,14) and state = 0
 	</select>
 	<update id="updateWarehouse">
 		update zncj_warehouse
 		set state = #{state},
-		name = #{name},
-		rfid = #{rfid}
-		where id = #{id}
-	</update>
-	<update id="updateWarehouse2">
-		update zncj_warehouse
-		set state = #{state},
-		name = #{name},
-		rfid = #{rfid}
-		where location = #{location}
+		 	name = #{name},
+	 	 	rfid = #{rfid}
+	 	 where id = #{id}
 	</update>
 </mapper>

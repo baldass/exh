@@ -39,7 +39,7 @@ public class HardwareHelper {
 	private static int maxWait = 120;// 最大等待2分钟
 	private static int currentSl = 0;// 计划数量
 	private static int endsl = 0;// 已完成
-	
+	private static boolean[] lp = { false, false };// 料盘储位上是否又料盘
 
 	@Autowired
 	private WarehouseHelper wh;

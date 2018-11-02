@@ -26,8 +26,7 @@ public class AgvUtil implements SerialPortEventListener {
 	public static void main(String[] args) throws Exception {
 		AgvUtil avg = new AgvUtil();
 		avg.init("COM5");
-//		avg.start1();
-		System.out.println("COM5");
+		//avg.start1();//
 		avg.start2();
 		//System.out.println("wait repait");
 		avg.waitend2();
