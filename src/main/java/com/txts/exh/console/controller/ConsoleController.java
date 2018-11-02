@@ -16,6 +16,7 @@ import com.txts.config.BaseController;
 import com.txts.exh.console.service.ConsoleService;
 import com.txts.task.CollectUtil;
 import com.txts.task.HardwareHelper;
+import com.txts.task.HardwareHelper2;
 import com.txts.util.Json;
 import com.txts.util.device.DeviceCollectUtil;
 import com.vo.BootstrapTable;
@@ -39,6 +40,8 @@ public class ConsoleController extends BaseController {
 	//private TaskRun run;
 	@Autowired
 	private HardwareHelper hard;
+	@Autowired
+	private HardwareHelper2 hard2;
 	@Autowired
 	private DeviceCollectUtil deviceUtil;
 	
@@ -97,14 +100,15 @@ public class ConsoleController extends BaseController {
 		if(!InitController.isInited){
 			return new Json(false, "当前设备未初始化", null);
 		}
-		if (hard.isRun) {
+		if (hard2.isRun) {
 			return new Json(false, "当前有工单正在开工", null);
 		}
 		int ix = consoleService.orderStart(requestMap);
 		if (ix == 0) {
 			return new Json(false, "失败", null);
 		}
-		hard.start(num, order);
+//		hard.start(num, order);
+		hard2.start(num,order);
 		// TODO
 		return new Json(true, "操作成功", null);
 	}

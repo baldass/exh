@@ -217,4 +217,7 @@ public class CollectUtil {
 	public int updateWarehouse(Map map){
 		return dao.update("collectMapper.updateWarehouse", map);
 	}
+	public int updateWarehouse2(Map map){
+		return dao.update("collectMapper.updateWarehouse2", map);
+	}
 }
