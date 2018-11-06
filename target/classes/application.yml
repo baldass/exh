@@ -1,8 +1,0 @@
-#端口
-server:
-  port: 8080
-#开启mybaits的sql打印
-mybatis:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  
