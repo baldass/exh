@@ -22,4 +22,6 @@ public interface SqlserverConnectService {
 	public void updateMO(String orderName);
 
 	public int inStorage(Integer id, String qrCode);
+	
+	public int renew();
 }

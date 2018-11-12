@@ -65,4 +65,11 @@ public class SqlserverConncetServiceImpl implements SqlserverConnectService {
 		map.put("qrCode",qrCode);
 		return commonDao.update("sqlserver.in_storage", map);
 	}
+
+	@Override
+	public int renew() {
+		// TODO Auto-generated method stub
+		return commonDao.update("sqlserver.renew",null);
+	}
+	
 }

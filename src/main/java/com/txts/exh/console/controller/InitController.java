@@ -89,6 +89,8 @@ public class InitController extends BaseController {
 		h.modbus4xWrite("4号机械手", 35, 0);
 		h.modbus4xWrite("机械手4等待点重置", 17, 0);
 		
+//		h.modbus4xWrite("机械手1-指令1", 31, 2);
+//		Thread.sleep(3000L);
 		h.modbus4xWrite("机械手1-指令1", 31, 0);
 		h.modbus4xWrite("机械手1-指令1", 11, 0);
 		

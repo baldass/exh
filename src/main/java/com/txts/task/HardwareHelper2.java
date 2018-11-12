@@ -105,14 +105,43 @@ public class HardwareHelper2 {
 	static RfidLoopRead rfid = new RfidLoopRead();
 
 	public static void main(String[] args) throws Exception {
+//		modbus4xWrite("启动分拣流水线", 27, 1);// 启动分拣流水线
+		modbus4xWrite("启动转弯流水线", 28, 1);// 启动转弯流水线
+		modbus4xWrite("启动3号流水线", 29, 1);// 启动3#流水线
+		modbus4xWrite("启动4号流水线", 30, 1);// 启动4#流水线
+////		 //等待分拣结束 分拣结束的时候 地址的值会变成2
+////		modbus4xWait("视觉分拣机器人>>结束", 2, 2);
+////		// 判断分拣位的料是否被拿走
+//		modbus4xWait("分拣流水线>>结束", 21, 0);
+////		// 等待分拣流水线
+//		modbus4xWait("分拣流水线>>启动完成", 6, 1);
+////		// 等待转弯流水线
+//		modbus4xWait("转弯流水线>>启动完成", 9, 1);
+//		// 等待3#流水线
+		modbus4xWait("3号流水线>>启动完成", 7, 1);
+//		// 等待4#流水线 启
+		modbus4xWait("4号流水线>>启动完成", 8, 1);
+
+		// 等待分拣位有料
+//		modbus4xWait("传送带NG分拣位有料", 24, 1);
+//		modbus4xWrite("分拣流水线>>关闭", 27, 0);// 关闭分拣流水线
+//		modbus4xWrite("转弯流水线>>关闭", 28, 0);// 关闭转弯流水线
+//		modbus4xWrite("3号流水线>>关闭", 29, 0);// 关闭3#流水线
+//		modbus4xWrite("4号流水线>>关闭", 30, 0);// 关闭4#流水线
+//		// 启动5号机器人
+//		modbus4xWrite("5号机械手>>分拣", 36, 1);
+//		Thread.sleep(5000);
+//		modbus4xWrite("5号机械手>>动作地址清零", 36, 0);
+		
 		modbus4xWrite("关闭分拣流水线", 27, 0);// 关闭分拣流水线
 		modbus4xWrite("关闭转弯流水线", 28, 0);// 关闭转弯流水线
 		modbus4xWrite("关闭3号流水线", 29, 0);// 关闭3#流水线
 		modbus4xWrite("关闭4号流水线", 30, 0);// 关闭4#流水线
-		// modbus4xWrite("1号机械手>>抓料", 31, 2);// 启动机械手1 抓料
-		// Thread.sleep(5000L);
+//		 modbus4xWrite("1号机械手>>抓料", 31,2);// 启动机械手1 抓料
+//		 Thread.sleep(3000L);
+//		 modbus4xWrite("1号机械手>>抓料", 31, 0);// 启动机械手1 抓料 
 		// // 等待5s
-		// modbus4xWrite("1号机械手>>动作地址清零", 31, 0);// 启动机械手1 抓料
+//		 modbus4xWrite("1号机械手>>动作地址清零", 31, 2);// 启动机械手1 抓料
 
 		// modbus4xWrite("3号机械手>>模拟包装", 34, 4);
 		// Thread.sleep(3000L);
@@ -133,9 +162,9 @@ public class HardwareHelper2 {
 
 		// modbus4xWrite("机械手2-指令2", 32, 0);
 		// Thread.sleep(3000L);
-		// modbus4xWrite("机械手2-指令2", 32, 1);
-		// Thread.sleep(3000L);
-		// modbus4xWrite("机械手2-指令2", 32, 0);
+//		 modbus4xWrite("机械手2-指令2", 32, 2);
+//		 Thread.sleep(3000L);
+//		 modbus4xWrite("机械手2-指令2", 32, 0);
 		//
 		// modbus4xWrite("4号机械手-取料1", 35, 1);
 		// Thread.sleep(2000L);
@@ -145,7 +174,7 @@ public class HardwareHelper2 {
 		// modbus4xWrite("2号机械手-取料2", 32, 2);
 		// Thread.sleep(1000L);
 		// modbus4xWrite("2号机械手-取料2", 32,0);
-		// modbus4xWrite("流水线1-指令1", 25, 0);// 关闭流水线1
+//		 modbus4xWrite("流水线1-指令1", 25, 0);// 关闭流水线1
 		// modbus4xWrite("关闭2号流水线", 26, 0);
 		// WarehouseHelper wh = new WarehouseHelper();
 		// wh.modbus4xWrite("立体库可入库", 38,1);
@@ -248,6 +277,7 @@ public class HardwareHelper2 {
 						Thread.sleep(3000);
 						modbus4xWrite("4号机械手>>动作地址清零 ", 35, 0);
 						modbus4xWait("4号机械手>>等待取原料结束 ", 17, 1);
+						Thread.sleep(2000);
 						modbus4xWrite("4号机械手>>监听地址清零 ", 17, 0);
 						Thread.sleep(2000);
 						agvState = 2;// agv完成状态
@@ -477,12 +507,12 @@ public class HardwareHelper2 {
 								modbus4xWait("分拣流水线>>结束", 21, 0);
 								// 等待分拣流水线
 								modbus4xWait("分拣流水线>>启动完成", 6, 1);
-								// 等待转弯流水线
-								modbus4xWait("转弯流水线>>启动完成", 9, 1);
-								// 等待3#流水线
-								modbus4xWait("3号流水线>>启动完成", 7, 1);
-								// 等待4#流水线 启
-								modbus4xWait("4号流水线>>启动完成", 8, 1);
+//								// 等待转弯流水线
+//								modbus4xWait("转弯流水线>>启动完成", 9, 1);
+//								// 等待3#流水线
+//								modbus4xWait("3号流水线>>启动完成", 7, 1);
+//								// 等待4#流水线 启
+//								modbus4xWait("4号流水线>>启动完成", 8, 1);
 
 								// 3号机器人卸料
 								rbt3unload2 = true;
@@ -496,8 +526,7 @@ public class HardwareHelper2 {
 								modbus4xWrite("5号机械手>>分拣", 36, 1);
 								Thread.sleep(5000);
 								modbus4xWrite("5号机械手>>动作地址清零", 36, 0);
-								addNg("视觉检测未通过");
-								Thread.sleep(15000);
+								addNg("视觉检测未通过");								
 							} else {
 								// ok的时候 收回气缸 启动2号流水线
 								modbus4xWrite("视觉扫描-气缸>>弹出", 37, 1);
@@ -518,7 +547,6 @@ public class HardwareHelper2 {
 								modbus4xWrite("流水线2     >>关闭", 26, 0);
 								// 启动3号机械手上料
 								rbt3package = true;
-
 							}
 						} else {
 							Thread.sleep(1000L);
@@ -618,25 +646,6 @@ public class HardwareHelper2 {
 							modbus4xWrite("3号机械手>>监听地址清零", 15, 0);
 							continue;
 						}
-						/*
-						 * switch (rbt3) { case 1:// 上料 modbus4xWrite("3号机械手>>动作地址清零", 34, 0);
-						 * modbus4xWrite("3号机械手>>监听地址清零", 15, 0); rbt3State = true; long start =
-						 * startDevice("包装工位"); if (flag) { modbus4xWrite("3号机械手>>模拟包装", 34, 3); } else
-						 * { modbus4xWrite("3号机械手>>模拟包装", 34, 2); } Thread.sleep(3000L);
-						 * modbus4xWrite("3号机械手>>动作地址清零", 34, 0);// 关闭机械手指令 stepExecOver("包装工位",
-						 * "emd_process3", null, System.currentTimeMillis() - start); // 设备3#机械臂完成地址未确认
-						 * modbus4xWait("3号机械手>>模拟包装完成", 15, 1); rbt3 = 0; rbt3State = false; belt2 = 1;
-						 * if (flag) { pStates[0] = false; } else { pStates[1] = false; }
-						 * Thread.sleep(3000L); modbus4xWrite("3号机械手>>监听地址清零", 15, 0); break; case 2://
-						 * 卸料 rbt3State = true; modbus4xWrite("3号机械手>>动作地址清零", 34, 0);
-						 * modbus4xWrite("3号机械手>>监听地址清零", 15, 0); if (flag) { modbus4xWrite("3号机械手>>卸料",
-						 * 34, 4); } else { modbus4xWrite("3号机械手>>卸料", 34, 1); } Thread.sleep(3000L);
-						 * modbus4xWrite("3号机械手>>动作地址清零", 34, 0);// 关闭机械手指令 modbus4xWait("3号机械手>>完成卸料",
-						 * 15, 1); if (flag) { pStates[0] = false; } else { pStates[1] = false; }
-						 * rbt3State = false; rbt3 = 0; Thread.sleep(3000L);
-						 * modbus4xWrite("3号机械手>>监听地址清零", 15, 0); break; default: Thread.sleep(1000L);
-						 * break; }
-						 */
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

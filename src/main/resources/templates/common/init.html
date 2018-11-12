@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html style="height: 100%;width: 100%;">
+<html style="height: 100%; width: 100%;">
 <head>
 <title>init</title>
 
@@ -14,24 +14,41 @@
 	href="/modules/border/border_blue.css">
 
 <style type="text/css">
+#border_device_title {
+	color: black;
+	text-align: center;
+	background-color: #fff;
+	border-radius: 20px;
+	width: 300px;
+	line-height: 30px;
+	margin: auto;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	-moz-border-radius: 20px;
+	-webkit-border-radius: 20px;
+}
 </style>
 </head>
 
-<body style="background-color:#0E2A43;height: 100%;width: 100%;">
+<body style="background-color: #0E2A43; height: 100%; width: 100%;">
 	<div id="border_device_title">
 		<!-- 标题 -->
 		<h4>初始化</h4>
 	</div>
 	<!-- 主体内容div -->
 	<div
-		style="width: 100%;height: 100%;background:url(/img/ui/exh_bg2.jpg) no-repeat;"
+		style="width: 100%; height: 100%; background: url(/img/ui/exh_bg2.jpg) no-repeat;"
 		id="border_blue_bg" class="border_blue_bg border_device_main_div">
 
-		<div id="border_main_table_div" style="margin: 0px auto;width: 260px;">
+		<div id="border_main_table_div"
+			style="margin: 0px auto; width: 260px;">
 
 			<h4 class="border_device_table_title">条码扫描器COM口</h4>
 			<div class="border_table_content" id="border_device_name">
-				<select style="width: 267px;margin-top: 10px;" id="init_select_code">
+				<select style="width: 267px; margin-top: 10px;"
+					id="init_select_code">
 					<option value="COM1">COM1</option>
 					<option value="COM2">COM2</option>
 					<option value="COM3">COM3</option>
@@ -47,7 +64,7 @@
 			</div>
 			<h4 class="border_device_table_title">AGV控制COM口</h4>
 			<div class="border_table_content" id="border_device_name">
-				<select style="width: 267px;margin-top: 10px;" id="init_select_agv">
+				<select style="width: 267px; margin-top: 10px;" id="init_select_agv">
 					<option value="COM1">COM1</option>
 					<option value="COM2">COM2</option>
 					<option value="COM3">COM3</option>
@@ -61,8 +78,10 @@
 				</select>
 			</div>
 			<h4 class="border_device_table_title" style="display: none;">RFID扫描器COM口</h4>
-			<div  style="display: none;" class="border_table_content" id="border_device_name">
-				<select style="width: 267px;margin-top: 10px;" id="init_select_rfid">
+			<div style="display: none;" class="border_table_content"
+				id="border_device_name">
+				<select style="width: 267px; margin-top: 10px;"
+					id="init_select_rfid">
 					<option value="1">COM1</option>
 					<option value="2">COM2</option>
 					<option value="3">COM3</option>
@@ -77,9 +96,12 @@
 			</div>
 
 			<input type="button" value="初始化"
-				style="width: 265px;margin-top: 10px;" id="init_init" onclick="dev_init()"/> <input
-				type="button" value="agv回原点" style="width: 265px;margin-top: 10px;"
-				id="init_agvreturn" onclick="agv_return()"/>
+				style="width: 265px; margin-top: 10px;" id="init_init"
+				onclick="dev_init()" /> <input type="button" value="agv回原点"
+				style="width: 265px; margin-top: 10px;" id="init_agvreturn"
+				onclick="agv_return()" /> <input type="button" value="重置立体库"
+				style="width: 265px; margin-top: 10px;" id="init_init"
+				onclick="renew_ware()" />
 		</div>
 	</div>
 
@@ -96,6 +118,17 @@
 	<!-- 全局代码 -->
 	<script src="/modules/common/common.js" type="text/javascript"></script>
 	<script type="text/javascript">
+	    function renew_ware(){
+	    	$.ajax({
+	    		url:'/project/renew',
+	    		data: '',
+	    		type: "get",
+	    		dataType: "json",
+	    		success : function(e){
+	    			base_alert_ok("完成");
+	    		}	    		
+	    	});
+	    }
 		function dev_init() {
 			$.ajax({
 				url : '/init/init',
@@ -119,10 +152,9 @@
 			});
 		}
 		function agv_return() {
-		$.ajax({
+			$.ajax({
 				url : '/init/agvBack',
-				data : {
-				},
+				data : {},
 				type : "post",
 				dataType : "json",
 				//async : true,
